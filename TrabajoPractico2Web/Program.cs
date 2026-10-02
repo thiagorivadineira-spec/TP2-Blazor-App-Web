@@ -16,8 +16,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // 3. Registrar los servicios (DAL) para que las pantallas los puedan usar
 builder.Services.AddScoped<ClienteService>();
-// builder.Services.AddScoped<ProductoService>(); // Descomentar cuando lo crees
-// builder.Services.AddScoped<VentaService>();    // Descomentar cuando lo crees
+builder.Services.AddScoped<ProductoService>();
+builder.Services.AddScoped<VentaService>();   
 
 
 // Add services to the container.

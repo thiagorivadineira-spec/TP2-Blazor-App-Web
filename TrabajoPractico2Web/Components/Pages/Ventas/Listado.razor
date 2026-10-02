@@ -1,0 +1,75 @@
+﻿@page "/ventas"
+@rendermode InteractiveServer
+@using TrabajoPractico2Web.Models
+@using TrabajoPractico2Web.DAL.Services
+@inject VentaService VentaService
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Historial de Ventas</h2>
+        <a href="/ventas/nueva" class="btn btn-success">Nueva Venta</a>
+    </div>
+
+    @if (ventas == null)
+    {
+        <p><em>Cargando...</em></p>
+    }
+    else
+    {
+        <table class="table table-striped table-hover border">
+            <thead class="table-dark">
+                <tr>
+                    <th>N° Factura</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Productos</th>
+                    <th>Total</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var venta in ventas)
+                {
+                    <tr>
+                        <td>@venta.Id</td>
+                        <td>@venta.FechaVenta.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(venta.Cliente?.Nombre) @(venta.Cliente?.Apellido)</td>
+                        <td>
+                            <!-- Lista de productos dentro de la celda -->
+                            <ul class="mb-0" style="padding-left: 1.2rem;">
+                                @foreach (var detalle in venta.Detalles)
+                                {
+                                    <li>@detalle.Cantidad x @(detalle.Producto?.Nombre)</li>
+                                }
+                            </ul>
+                        </td>
+                        <td>$@venta.Total</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" @onclick="() => Eliminar(venta.Id)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private List<Venta>? ventas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarVentas();
+    }
+
+    private async Task CargarVentas()
+    {
+        ventas = await VentaService.GetVentasAsync();
+    }
+
+    private async Task Eliminar(int id)
+    {
+        await VentaService.DeleteVentaAsync(id);
+        await CargarVentas();
+    }
+}

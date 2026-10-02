@@ -1,0 +1,171 @@
+﻿@page "/ventas/nueva"
+@rendermode InteractiveServer
+@using TrabajoPractico2Web.Models
+@using TrabajoPractico2Web.DAL.Services
+@inject VentaService VentaService
+@inject ClienteService ClienteService
+@inject ProductoService ProductoService
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    <h2>Registrar Nueva Venta</h2>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+
+    <hr />
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Cliente</label>
+            <select class="form-select" @bind="venta.ClienteId">
+                <option value="0">Seleccione un cliente...</option>
+                @foreach (var cliente in clientes)
+                {
+                    <option value="@cliente.Id">@cliente.Nombre @cliente.Apellido</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-light"><strong>Agregar Productos</strong></div>
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label">Producto</label>
+                    <select class="form-select" @bind="productoSeleccionadoId">
+                        <option value="0">Seleccione un producto...</option>
+                        @foreach (var prod in productos)
+                        {
+                            <option value="@prod.Id">@prod.Nombre ($@prod.Precio - Stock: @prod.Stock)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" class="form-control" @bind="cantidadSeleccionada" min="1" />
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-primary" @onclick="AgregarProducto">Añadir al Carrito</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (venta.Detalles.Any())
+    {
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var detalle in venta.Detalles)
+                {
+                    <tr>
+                        <td>@detalle.Producto?.Nombre</td>
+                        <td>@detalle.Cantidad</td>
+                        <td>$@detalle.PrecioUnitario</td>
+                        <td>$@(detalle.Cantidad * detalle.PrecioUnitario)</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger" @onclick="() => QuitarProducto(detalle)">Quitar</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Total a Pagar:</strong></td>
+                    <td colspan="2"><strong>$@venta.Total</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <button class="btn btn-success" @onclick="GuardarVenta" disabled="@(venta.ClienteId == 0)">Confirmar Venta</button>
+    }
+</div>
+
+@code {
+    private string errorMessage = "";
+    private Venta venta = new Venta();
+    private List<Cliente> clientes = new();
+    private List<Producto> productos = new();
+
+    // Variables temporales para el combo de agregar productos
+    private int productoSeleccionadoId;
+    private int cantidadSeleccionada = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        clientes = await ClienteService.GetClientesAsync();
+        productos = await ProductoService.GetProductosAsync();
+    }
+
+    private void AgregarProducto()
+    {
+        if (productoSeleccionadoId == 0 || cantidadSeleccionada <= 0) return;
+
+        var producto = productos.FirstOrDefault(p => p.Id == productoSeleccionadoId);
+        if (producto != null)
+        {
+            var detalle = new DetalleVenta
+            {
+                ProductoId = producto.Id,
+                Producto = producto, // Solo para mostrar el nombre en la tabla temporal
+                Cantidad = cantidadSeleccionada,
+                PrecioUnitario = producto.Precio
+            };
+
+            venta.Detalles.Add(detalle);
+            ActualizarTotal();
+
+            // Resetear controles
+            productoSeleccionadoId = 0;
+            cantidadSeleccionada = 1;
+        }
+    }
+
+    private void QuitarProducto(DetalleVenta detalle)
+    {
+        venta.Detalles.Remove(detalle);
+        ActualizarTotal();
+    }
+
+    private void ActualizarTotal()
+    {
+        venta.Total = venta.Detalles.Sum(d => d.Cantidad * d.PrecioUnitario);
+    }
+
+    private async Task GuardarVenta()
+    {
+        if (venta.ClienteId > 0 && venta.Detalles.Any())
+        {
+            try
+            {
+                errorMessage = ""; // Limpiamos errores previos
+                foreach (var d in venta.Detalles)
+                {
+                    d.Producto = null;
+                }
+
+                await VentaService.AddVentaAsync(venta);
+                Navigation.NavigateTo("/ventas");
+            }
+            catch (Exception ex)
+            {
+                // Atrapamos el error de stock y lo guardamos para mostrarlo
+                errorMessage = ex.Message;
+            }
+        }
+    }
+}

@@ -1,0 +1,77 @@
+﻿@page "/clientes/formulario"
+@page "/clientes/formulario/{Id:int}"
+@rendermode InteractiveServer
+@using TrabajoPractico2Web.Models
+@using TrabajoPractico2Web.DAL.Services
+@inject ClienteService ClienteService
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    <h2>@(Id.HasValue ? "Editar Cliente" : "Nuevo Cliente")</h2>
+    <hr />
+
+    <EditForm Model="cliente" OnValidSubmit="Guardar" FormName="clienteForm">
+        <DataAnnotationsValidator />
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Nombre</label>
+                <InputText @bind-Value="cliente.Nombre" class="form-control" />
+                <ValidationMessage For="@(() => cliente.Nombre)" class="text-danger" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Apellido</label>
+                <InputText @bind-Value="cliente.Apellido" class="form-control" />
+                <ValidationMessage For="@(() => cliente.Apellido)" class="text-danger" />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <InputText @bind-Value="cliente.Email" class="form-control" type="email" />
+                <ValidationMessage For="@(() => cliente.Email)" class="text-danger" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Teléfono</label>
+                <InputText @bind-Value="cliente.Telefono" class="form-control" />
+                <ValidationMessage For="@(() => cliente.Telefono)" class="text-danger" />
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Guardar</button>
+        <a href="/clientes" class="btn btn-secondary">Cancelar</a>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private Cliente cliente = new Cliente();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            var clienteEncontrado = await ClienteService.GetClienteByIdAsync(Id.Value);
+            if (clienteEncontrado != null)
+            {
+                cliente = clienteEncontrado;
+            }
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (Id.HasValue)
+        {
+            await ClienteService.UpdateClienteAsync(cliente);
+        }
+        else
+        {
+            await ClienteService.AddClienteAsync(cliente);
+        }
+        Navigation.NavigateTo("/clientes");
+    }
+}

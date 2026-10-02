@@ -1,0 +1,76 @@
+﻿@page "/productos/formulario"
+@page "/productos/formulario/{Id:int}"
+@rendermode InteractiveServer
+@using TrabajoPractico2Web.Models
+@using TrabajoPractico2Web.DAL.Services
+@inject ProductoService ProductoService
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    <h2>@(Id.HasValue ? "Editar Producto" : "Nuevo Producto")</h2>
+    <hr />
+
+    <EditForm Model="producto" OnValidSubmit="Guardar" FormName="productoForm">
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <InputText @bind-Value="producto.Nombre" class="form-control" />
+            <ValidationMessage For="@(() => producto.Nombre)" class="text-danger" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <InputText @bind-Value="producto.Descripcion" class="form-control" />
+            <ValidationMessage For="@(() => producto.Descripcion)" class="text-danger" />
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Precio</label>
+                <InputNumber @bind-Value="producto.Precio" class="form-control" />
+                <ValidationMessage For="@(() => producto.Precio)" class="text-danger" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Stock</label>
+                <InputNumber @bind-Value="producto.Stock" class="form-control" />
+                <ValidationMessage For="@(() => producto.Stock)" class="text-danger" />
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Guardar</button>
+        <a href="/productos" class="btn btn-secondary">Cancelar</a>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private Producto producto = new Producto();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            var productoEncontrado = await ProductoService.GetProductoByIdAsync(Id.Value);
+            if (productoEncontrado != null)
+            {
+                producto = productoEncontrado;
+            }
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (Id.HasValue)
+        {
+            await ProductoService.UpdateProductoAsync(producto);
+        }
+        else
+        {
+            await ProductoService.AddProductoAsync(producto);
+        }
+        Navigation.NavigateTo("/productos");
+    }
+}
