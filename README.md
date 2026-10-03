@@ -19,8 +19,3 @@ Aplicación web full-stack desarrollada en **.NET 10** con **Blazor Server** y *
   * Validación estricta de stock antes de confirmar la compra.
 * **Historial de Operaciones:** Listado detallado de comprobantes emitidos.
 
-## Instalación y Configuración Local
-
-Si deseas ejecutar este proyecto en tu entorno local:
-
-1. Clona el repositorio:
