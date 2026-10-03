@@ -16,7 +16,7 @@ namespace TrabajoPractico2Web.DAL.Services
         public async Task<List<Venta>> GetVentasAsync()
         {
             return await _context.Ventas
-                .Include(v => v.Cliente)
+                .Include(v => v.Cliente)                  // <-- Trae el nombre del cliente
                 .Include(v => v.Detalles)                // <-- Trae los detalles
                     .ThenInclude(d => d.Producto)        // <-- Trae el nombre del producto
                 .OrderByDescending(v => v.FechaVenta)
